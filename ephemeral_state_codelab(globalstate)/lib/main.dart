@@ -29,37 +29,40 @@ class MyHomePage extends StatelessWidget {
       appBar: AppBar(title: Text('Flutter Counter App')),
       body: ReorderableListView(
         onReorder: (oldIndex, newIndex) {
-          if (oldIndex < newIndex) newIndex -= 1;
-          final counter = globalState.counters.removeAt(oldIndex);
-          globalState.counters.insert(newIndex, counter);
-          globalState.notifyListeners();
+          globalState.reorderCounters(oldIndex, newIndex);
         },
-        children: globalState.counters.map((counterData) {
-          int index = globalState.counters.indexOf(counterData);
-          return CounterWidget(
-            key: ValueKey(index),
-            label: counterData['label'],
-            color: counterData['color'],
-            counter: counterData['value'],
-            onIncrement: () {
-              globalState.changeCounter(index, counterData['value'] + 1);
-            },
-            onDecrement: () {
-              if (counterData['value'] > 0) {
-                globalState.changeCounter(index, counterData['value'] - 1);
-              }
-            },
-            onLabelChanged: (newLabel) {
-              globalState.changeLabel(index, newLabel);
-            },
-            onColorChanged: (newColor) {
-              globalState.changeColor(index, newColor);
-            },
-            onDelete: () {
-              globalState.removeCounter(index); // Hapus counter
-            },
-          );
-        }).toList(),
+        children: globalState.counters
+            .asMap()
+            .map((index, counterData) {
+              return MapEntry(
+                index,
+                CounterWidget(
+                  key: ValueKey(index),
+                  label: counterData['label'],
+                  color: counterData['color'],
+                  counter: counterData['value'],
+                  onIncrement: () {
+                    globalState.changeCounter(index, counterData['value'] + 1);
+                  },
+                  onDecrement: () {
+                    if (counterData['value'] > 0) {
+                      globalState.changeCounter(index, counterData['value'] - 1);
+                    }
+                  },
+                  onLabelChanged: (newLabel) {
+                    globalState.changeLabel(index, newLabel);
+                  },
+                  onColorChanged: (newColor) {
+                    globalState.changeColor(index, newColor);
+                  },
+                  onDelete: () {
+                    globalState.removeCounter(index);
+                  },
+                ),
+              );
+            })
+            .values
+            .toList(),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -96,6 +99,7 @@ class CounterWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
+      key: key,
       duration: Duration(milliseconds: 300),
       color: color,
       padding: EdgeInsets.all(16.0),
@@ -132,7 +136,7 @@ class CounterWidget extends StatelessWidget {
                 onPressed: () async {
                   Color? newColor = await _pickColor(context);
                   if (newColor != null) {
-                    onColorChanged(newColor); // Perubahan warna diterapkan
+                    onColorChanged(newColor);
                   }
                 },
               ),
@@ -140,14 +144,14 @@ class CounterWidget extends StatelessWidget {
                 icon: Icon(Icons.edit),
                 onPressed: () async {
                   String? newLabel = await _editLabel(context);
-                  if (newLabel != null && newLabel.isNotEmpty) {
+                  if (newLabel != null) {
                     onLabelChanged(newLabel);
                   }
                 },
               ),
               IconButton(
                 icon: Icon(Icons.delete),
-                onPressed: onDelete, // Fungsi untuk menghapus counter
+                onPressed: onDelete,
               ),
             ],
           ),
@@ -157,6 +161,7 @@ class CounterWidget extends StatelessWidget {
   }
 
   Future<Color?> _pickColor(BuildContext context) async {
+    Color tempColor = color;
     return await showDialog<Color>(
       context: context,
       builder: (context) {
@@ -165,13 +170,15 @@ class CounterWidget extends StatelessWidget {
           content: SingleChildScrollView(
             child: ColorPicker(
               pickerColor: color,
-              onColorChanged: (color) {},
+              onColorChanged: (selectedColor) {
+                tempColor = selectedColor;
+              },
             ),
           ),
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.pop(context, color);
+                Navigator.pop(context, tempColor);
               },
               child: Text('Select'),
             ),

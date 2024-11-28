@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class GlobalState extends ChangeNotifier {
@@ -15,7 +14,7 @@ class GlobalState extends ChangeNotifier {
       'value': 0, // Nilai awal counter
       'color': Colors.blue, // Warna default counter
     });
-    notifyListeners(); // Memberi tahu listener bahwa ada perubahan
+    notifyListeners();
   }
 
   // Method untuk menghapus counter
@@ -32,13 +31,23 @@ class GlobalState extends ChangeNotifier {
 
   // Method untuk mengubah label counter
   void changeLabel(int index, String newLabel) {
-    _counters[index]['label'] = newLabel;
-    notifyListeners();
+    if (newLabel.trim().isNotEmpty) {
+      _counters[index]['label'] = newLabel;
+      notifyListeners();
+    }
   }
 
   // Method untuk mengubah warna counter
   void changeColor(int index, Color newColor) {
     _counters[index]['color'] = newColor;
+    notifyListeners();
+  }
+
+  // Method untuk mengubah urutan counter
+  void reorderCounters(int oldIndex, int newIndex) {
+    if (oldIndex < newIndex) newIndex -= 1;
+    final counter = _counters.removeAt(oldIndex);
+    _counters.insert(newIndex, counter);
     notifyListeners();
   }
 }
